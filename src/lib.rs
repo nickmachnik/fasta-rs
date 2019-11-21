@@ -10,16 +10,15 @@ use std::collections::HashMap;
 // Open file in gz or normal mode
 pub fn open(path: &Path) -> Box<dyn std::io::Read> {
     match path.extension().unwrap().to_str().unwrap() {
-        "fa" | "fasta" => {
-            Box::new(File::open(path)
-                .unwrap_or_else(|_| panic!("Could not open path: {}", path.display())))
-        },
         "gz" => {
             let fin = File::open(path)
                 .unwrap_or_else(|_| panic!("Could not open path: {}", path.display()));
             Box::new(GzDecoder::new(fin))
         },
-        x => panic!("Invalid format suffix: {:?}", x)
+        _ => {
+            Box::new(File::open(path)
+                .unwrap_or_else(|_| panic!("Could not open path: {}", path.display())))
+        }
     }
 }
 
