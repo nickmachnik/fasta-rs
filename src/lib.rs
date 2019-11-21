@@ -9,7 +9,7 @@ use std::collections::HashMap;
 
 // Open file in gz or normal mode
 pub fn open(path: &Path) -> Box<dyn std::io::Read> {
-    match path.extension().unwrap().to_str().unwrap() {
+    match path.extension().unwrap().to_str().expect("No path extension found!") {
         "gz" => {
             let fin = File::open(path)
                 .unwrap_or_else(|_| panic!("Could not open path: {}", path.display()));
