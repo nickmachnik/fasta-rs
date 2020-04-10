@@ -2,6 +2,7 @@ extern crate bgzip;
 extern crate hashbrown;
 extern crate serde;
 
+use std::io::{SeekFrom, Read, Seek};
 use bgzip::read::BGzReader;
 use serde::{Serialize, Deserialize};
 use std::fs::File;
@@ -11,6 +12,49 @@ use std::io::BufRead;
 use hashbrown::HashMap;
 use std::error;
 use std::fmt;
+
+#[derive(Debug)]
+pub enum FastaHandle {
+    Compressed(BGzReader<File>),
+    Uncompressed(File),
+}
+
+impl Read for FastaHandle {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        match self {
+            FastaHandle::Compressed(s) => s.read(buf),
+            FastaHandle::Uncompressed(s) => s.read(buf),
+        }
+    }
+}
+
+impl Seek for FastaHandle {
+    fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
+        match self {
+            FastaHandle::Compressed(s) => s.seek(pos),
+            FastaHandle::Uncompressed(s) => s.seek(pos),
+        }
+    }
+}
+
+pub fn open_fasta(path: &Path) -> FastaHandle {
+    if let Some(extension) = path.extension() {
+        match extension.to_str().unwrap() {
+            "gz" => {
+                let fin = File::open(path)
+                    .unwrap_or_else(|_| panic!("Could not open path: {}", path.display()));
+                FastaHandle::Compressed(BGzReader::new(fin).unwrap())
+            },
+            _ => {
+                FastaHandle::Uncompressed(File::open(path)
+                    .unwrap_or_else(|_| panic!("Could not open path: {}", path.display())))
+            }
+        }
+    } else {
+        FastaHandle::Uncompressed(File::open(path)
+            .unwrap_or_else(|_| panic!("Could not open path: {}", path.display())))
+    }
+}
 
 // Open file in gz or normal mode
 pub fn open(path: &Path) -> Box<dyn std::io::Read> {
@@ -31,7 +75,6 @@ pub fn open(path: &Path) -> Box<dyn std::io::Read> {
             .unwrap_or_else(|_| panic!("Could not open path: {}", path.display())))
     }
 }
-
 
 pub struct FastaReader {
     lines: std::io::Lines<std::io::BufReader<std::boxed::Box<dyn std::io::Read>>>,
@@ -112,6 +155,7 @@ impl FastaSeqs {
 
 
 // header -> sequence mapping
+#[derive(Debug)]
 pub struct FastaMap {
     pub id_to_seq: HashMap<String, String>
 }
@@ -235,5 +279,19 @@ mod tests {
         expected.insert("P93158".to_string(), 359_u64);
         
         assert_eq!(FastaIndex::new(Path::new("./resources/test.fasta")).id_to_offset, expected);
+    }
+
+    #[test]
+    fn indexed_reading() {
+        let index = FastaIndex::new(Path::new("./resources/test.fasta"));
+        let fasta_handle = open_fasta(Path::new("./resources/test.fasta"));
+        let fasta_map = FastaMap::from_index_with_ids(
+            fasta_handle,
+            &index,
+            &["P9WNK5", "Q8I5U1"]
+        ).unwrap();
+        assert_eq!(fasta_map.id_to_seq.len(), 2);
+        assert!(fasta_map.id_to_seq.contains_key("Q8I5U1"));
+        assert!(fasta_map.id_to_seq.contains_key("P9WNK5"));
     }
 }
