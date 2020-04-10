@@ -174,14 +174,14 @@ impl FastaMap {
         FastaMap { id_to_seq: entries }
     }
 
-    pub fn from_index_with_ids<T> (
-        mut fasta_handle: T,
+    pub fn from_index_with_ids (
+        path: &Path,
         index: &FastaIndex,
         ids: &[&str]
     ) -> Result<Self, MissingID>
-        where T: std::io::Read + std::io::Seek
     {
         let mut res = HashMap::new();
+        let mut fasta_handle = open_fasta(path);
         for k in ids {
             if let Some(v) = index.id_to_offset.get(*k) {
                 let mut seq_buf = String::new();
@@ -284,9 +284,8 @@ mod tests {
     #[test]
     fn indexed_reading() {
         let index = FastaIndex::new(Path::new("./resources/test.fasta"));
-        let fasta_handle = open_fasta(Path::new("./resources/test.fasta"));
         let fasta_map = FastaMap::from_index_with_ids(
-            fasta_handle,
+            Path::new("./resources/test.fasta"),
             &index,
             &["P9WNK5", "Q8I5U1"]
         ).unwrap();
