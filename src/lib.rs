@@ -257,7 +257,9 @@ impl FastaIndex {
 
         FastaIndex{ id_to_offset: res }
     }
+}
 
+impl FastaIndex {
     pub fn to_json(&self, outpath: &Path) {
         let mut file = match File::create(&outpath) {
             Err(why) => panic!("couldn't create {:?}: {:?}", outpath, why),
