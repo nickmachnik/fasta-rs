@@ -258,8 +258,14 @@ impl FastaIndex {
         FastaIndex{ id_to_offset: res }
     }
 
-    pub fn to_json() {
-        unimplemented!()
+    pub fn to_json(&self, outpath: &Path) {
+        let mut file = match File::create(&outpath) {
+            Err(why) => panic!("couldn't create {:?}: {:?}", outpath, why),
+            Ok(file) => file,
+        };
+        if let Err(why) = serde_json::to_writer(&mut file, self) {
+            panic!("couldn't write to {:?}: {:?}", outpath, why)
+        }
     }
 }
 
