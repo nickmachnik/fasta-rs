@@ -242,11 +242,14 @@ impl FastaIndex {
         while len != 0 {
             if line_buf.starts_with('>') {
                 let header_split = line_buf.split('|').collect::<Vec<&str>>();
-                if header_split.len() > 1 {
-                    res.insert(header_split[1].to_string(), global_offset);
+                let key = if header_split.len() > 1 {
+                    header_split[1]
                 } else {
-                    res.insert(header_split[0].to_string(), global_offset);
-                }
+                    header_split[0]
+                };
+                if let Some(_old_entry) = res.insert(key.to_string(), global_offset) {
+                    panic!("Multiple entries found for id: {:?}", key);
+                };
             }
 
             global_offset += len as u64;
@@ -257,9 +260,11 @@ impl FastaIndex {
 
         FastaIndex{ id_to_offset: res }
     }
-}
 
-impl FastaIndex {
+    pub fn from_json(path: &Path) -> Self {
+        unimplemented!()
+    }
+
     pub fn to_json(&self, outpath: &Path) {
         let mut file = match File::create(&outpath) {
             Err(why) => panic!("couldn't create {:?}: {:?}", outpath, why),
@@ -270,6 +275,7 @@ impl FastaIndex {
         }
     }
 }
+
 
 #[cfg(test)]
 mod tests {
