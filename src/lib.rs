@@ -2,6 +2,7 @@ extern crate flate2;
 extern crate hashbrown;
 extern crate serde;
 
+use std::io::Write;
 use std::io::{SeekFrom, Read, Seek};
 use flate2::read::GzDecoder;
 use serde::{Serialize, Deserialize};
@@ -178,7 +179,7 @@ impl FastaMap {
         path: &Path,
         index: &FastaIndex,
         ids: &[String]
-    ) -> Result<Self, MissingID>
+    ) -> Self
     {
         let mut res = HashMap::new();
         let mut fasta_handle = open_fasta(path);
@@ -203,11 +204,24 @@ impl FastaMap {
                     }
                 }
                 res.insert((*k).to_string(), seq_buf);
-            } else {
-                return Err(MissingID { id: (*k).to_string() })
             }
         }
-        Ok(FastaMap{ id_to_seq: res })
+        FastaMap{ id_to_seq: res }
+    }
+
+    pub fn to_fasta(&self, path: &Path) {
+        let mut file = match File::create(path) {
+            Err(why) => panic!("couldn't create {:?}: {:?}", path, why),
+            Ok(file) => file,
+        };
+        for (k, v) in self.id_to_seq.iter() {
+            if let Err(why) = file.write_all(format!(">{}\n", k).as_bytes()) {
+                panic!("couldn't write to {:?}: {:?}", path, why)
+            };
+            if let Err(why) = file.write_all(format!("{}\n\n", v).as_bytes()) {
+                panic!("couldn't write to {:?}: {:?}", path, why)
+            };
+        }
     }
 }
 
@@ -310,7 +324,7 @@ mod tests {
             Path::new("./resources/test.fasta"),
             &index,
             &["P9WNK5".to_string(), "Q8I5U1".to_string()]
-        ).unwrap();
+        );
         assert_eq!(fasta_map.id_to_seq.len(), 2);
         assert!(fasta_map.id_to_seq.contains_key("Q8I5U1"));
         assert!(fasta_map.id_to_seq.contains_key("P9WNK5"));
