@@ -196,7 +196,6 @@ impl FastaMap {
                 let mut seen_header = false;
                 for line in io::BufReader::new(&mut fasta_handle).lines() {
                     let lstring = line.unwrap();
-                    println!("{:?}", lstring);
                     if lstring.starts_with('>') {
                         if seen_header {
                             break
