@@ -5,7 +5,7 @@ extern crate serde;
 use std::io::{SeekFrom, Read, Seek};
 use bgzip::read::BGzReader;
 use serde::{Serialize, Deserialize};
-use std::fs::File;
+use std::fs::{File, read_to_string};
 use std::path::Path;
 use std::io;
 use std::io::BufRead;
@@ -262,7 +262,8 @@ impl FastaIndex {
     }
 
     pub fn from_json(path: &Path) -> Self {
-        unimplemented!()
+        let json_file_str = read_to_string(path).expect("file not found");
+        serde_json::from_str(&json_file_str).expect("error while reading json")
     }
 
     pub fn to_json(&self, outpath: &Path) {
@@ -307,4 +308,13 @@ mod tests {
         assert!(fasta_map.id_to_seq.contains_key("Q8I5U1"));
         assert!(fasta_map.id_to_seq.contains_key("P9WNK5"));
     }
+
+    #[test]
+    fn index_dump_and_load() {
+        let index = FastaIndex::new(Path::new("./resources/test.fasta"));
+        index.to_json(Path::new("./resources/test.index"));
+        let loaded = FastaIndex::from_json(Path::new("./resources/test.index"));
+        assert_eq!(index.id_to_offset, loaded.id_to_offset);
+
+    }    
 }
