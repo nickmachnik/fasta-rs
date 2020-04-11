@@ -192,11 +192,17 @@ impl FastaMap {
                 let mut seq_buf = String::new();
                 fasta_handle.seek(io::SeekFrom::Start(*v))
                     .expect("File seek failed in `from_index_with_ids`.");
-
+                
+                let mut seen_header = false;
                 for line in io::BufReader::new(&mut fasta_handle).lines() {
                     let lstring = line.unwrap();
+                    println!("{:?}", lstring);
                     if lstring.starts_with('>') {
-                        continue
+                        if seen_header {
+                            break
+                        } else {
+                            seen_header = true;
+                        }
                     } else if lstring == "" {
                         break
                     } else {
