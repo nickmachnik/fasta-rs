@@ -1,9 +1,9 @@
-extern crate bgzip;
+extern crate flate2;
 extern crate hashbrown;
 extern crate serde;
 
 use std::io::{SeekFrom, Read, Seek};
-use bgzip::read::BGzReader;
+use flate2::read::GzDecoder;
 use serde::{Serialize, Deserialize};
 use std::fs::{File, read_to_string};
 use std::path::Path;
@@ -15,7 +15,7 @@ use std::fmt;
 
 #[derive(Debug)]
 pub enum FastaHandle {
-    Compressed(BGzReader<File>),
+    Compressed(GzDecoder<File>),
     Uncompressed(File),
 }
 
@@ -31,7 +31,7 @@ impl Read for FastaHandle {
 impl Seek for FastaHandle {
     fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
         match self {
-            FastaHandle::Compressed(s) => s.seek(pos),
+            FastaHandle::Compressed(_s) => panic!("Cannot seek in gzipped file!"),
             FastaHandle::Uncompressed(s) => s.seek(pos),
         }
     }
@@ -43,7 +43,7 @@ pub fn open_fasta(path: &Path) -> FastaHandle {
             "gz" => {
                 let fin = File::open(path)
                     .unwrap_or_else(|_| panic!("Could not open path: {}", path.display()));
-                FastaHandle::Compressed(BGzReader::new(fin).unwrap())
+                FastaHandle::Compressed(GzDecoder::new(fin))
             },
             _ => {
                 FastaHandle::Uncompressed(File::open(path)
@@ -63,7 +63,7 @@ pub fn open(path: &Path) -> Box<dyn std::io::Read> {
             "gz" => {
                 let fin = File::open(path)
                     .unwrap_or_else(|_| panic!("Could not open path: {}", path.display()));
-                Box::new(BGzReader::new(fin).unwrap())
+                Box::new(GzDecoder::new(fin))
             },
             _ => {
                 Box::new(File::open(path)
@@ -182,6 +182,10 @@ impl FastaMap {
     {
         let mut res = HashMap::new();
         let mut fasta_handle = open_fasta(path);
+        if let FastaHandle::Compressed(_) = fasta_handle {
+            panic!("Tried to use index on non seekable compressed file: {:?}", path);
+        }
+
         for k in ids {
             if let Some(v) = index.id_to_offset.get(*k) {
                 let mut seq_buf = String::new();
@@ -232,8 +236,11 @@ impl FastaIndex {
     pub fn new(path: &Path) -> Self {
         let mut res = HashMap::new();
 
-        let fin = open(&path);
-        let mut reader = io::BufReader::new(fin);
+        let fasta_handle = open_fasta(path);
+        if let FastaHandle::Compressed(_) = fasta_handle {
+            panic!("Tried to build index on non seekable compressed file: {:?}", path);
+        }
+        let mut reader = io::BufReader::new(fasta_handle);
         let mut line_buf = String::new();
         let mut global_offset: u64 = 0;
 
