@@ -177,7 +177,7 @@ impl FastaMap {
     pub fn from_index_with_ids (
         path: &Path,
         index: &FastaIndex,
-        ids: &[&str]
+        ids: &[String]
     ) -> Result<Self, MissingID>
     {
         let mut res = HashMap::new();
@@ -187,7 +187,7 @@ impl FastaMap {
         }
 
         for k in ids {
-            if let Some(v) = index.id_to_offset.get(*k) {
+            if let Some(v) = index.id_to_offset.get(k) {
                 let mut seq_buf = String::new();
                 fasta_handle.seek(io::SeekFrom::Start(*v))
                     .expect("File seek failed in `from_index_with_ids`.");
@@ -309,7 +309,7 @@ mod tests {
         let fasta_map = FastaMap::from_index_with_ids(
             Path::new("./resources/test.fasta"),
             &index,
-            &["P9WNK5", "Q8I5U1"]
+            &["P9WNK5".to_string(), "Q8I5U1".to_string()]
         ).unwrap();
         assert_eq!(fasta_map.id_to_seq.len(), 2);
         assert!(fasta_map.id_to_seq.contains_key("Q8I5U1"));
