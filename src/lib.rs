@@ -197,7 +197,7 @@ impl FastaMap {
                     let lstring = line.unwrap();
                     if lstring.starts_with('>') {
                         continue
-                    } else if lstring == "\n" {
+                    } else if lstring == "" {
                         break
                     } else {
                         seq_buf.push_str(&lstring);
@@ -326,6 +326,7 @@ mod tests {
             &["P9WNK5".to_string(), "Q8I5U1".to_string()]
         );
         assert_eq!(fasta_map.id_to_seq.len(), 2);
+        println!("{:?}", fasta_map);
         assert!(fasta_map.id_to_seq.contains_key("Q8I5U1"));
         assert!(fasta_map.id_to_seq.contains_key("P9WNK5"));
     }
@@ -336,6 +337,5 @@ mod tests {
         index.to_json(Path::new("./resources/test.index"));
         let loaded = FastaIndex::from_json(Path::new("./resources/test.index"));
         assert_eq!(index.id_to_offset, loaded.id_to_offset);
-
-    }    
+    }
 }
