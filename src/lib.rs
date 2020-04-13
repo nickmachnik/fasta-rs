@@ -295,7 +295,7 @@ impl FastaIndex {
     pub fn to_json(&self, outpath: &Path) {
         let mut file = match File::create(&outpath) {
             Err(why) => panic!("couldn't create {:?}: {:?}", outpath, why),
-            Ok(file) => file,
+            Ok(file) => BufWriter::new(file),
         };
         if let Err(why) = serde_json::to_writer(&mut file, self) {
             panic!("couldn't write to {:?}: {:?}", outpath, why)
