@@ -2,17 +2,17 @@ extern crate flate2;
 extern crate hashbrown;
 extern crate serde;
 
-use std::io::Write;
-use std::io::{SeekFrom, Read, Seek};
 use flate2::read::GzDecoder;
-use serde::{Serialize, Deserialize};
-use std::fs::{File, read_to_string};
-use std::path::Path;
-use std::io;
-use std::io::{BufRead, BufWriter};
 use hashbrown::HashMap;
+use serde::{Deserialize, Serialize};
 use std::error;
 use std::fmt;
+use std::fs::{read_to_string, File};
+use std::io;
+use std::io::Write;
+use std::io::{BufRead, BufWriter};
+use std::io::{Read, Seek, SeekFrom};
+use std::path::Path;
 
 #[derive(Debug)]
 pub enum FastaHandle {
@@ -45,15 +45,16 @@ pub fn open_fasta(path: &Path) -> FastaHandle {
                 let fin = File::open(path)
                     .unwrap_or_else(|_| panic!("Could not open path: {}", path.display()));
                 FastaHandle::Compressed(GzDecoder::new(fin))
-            },
-            _ => {
-                FastaHandle::Uncompressed(File::open(path)
-                    .unwrap_or_else(|_| panic!("Could not open path: {}", path.display())))
             }
+            _ => FastaHandle::Uncompressed(
+                File::open(path)
+                    .unwrap_or_else(|_| panic!("Could not open path: {}", path.display())),
+            ),
         }
     } else {
-        FastaHandle::Uncompressed(File::open(path)
-            .unwrap_or_else(|_| panic!("Could not open path: {}", path.display())))
+        FastaHandle::Uncompressed(
+            File::open(path).unwrap_or_else(|_| panic!("Could not open path: {}", path.display())),
+        )
     }
 }
 
@@ -65,15 +66,16 @@ pub fn open(path: &Path) -> Box<dyn std::io::Read> {
                 let fin = File::open(path)
                     .unwrap_or_else(|_| panic!("Could not open path: {}", path.display()));
                 Box::new(GzDecoder::new(fin))
-            },
-            _ => {
-                Box::new(File::open(path)
-                    .unwrap_or_else(|_| panic!("Could not open path: {}", path.display())))
             }
+            _ => Box::new(
+                File::open(path)
+                    .unwrap_or_else(|_| panic!("Could not open path: {}", path.display())),
+            ),
         }
     } else {
-        Box::new(File::open(path)
-            .unwrap_or_else(|_| panic!("Could not open path: {}", path.display())))
+        Box::new(
+            File::open(path).unwrap_or_else(|_| panic!("Could not open path: {}", path.display())),
+        )
     }
 }
 
@@ -91,7 +93,7 @@ impl FastaReader {
             header: None,
             seq_buf: String::new(),
         };
-        
+
         // find first header
         while res.header == None {
             match res.lines.next() {
@@ -100,7 +102,7 @@ impl FastaReader {
                     if line.starts_with('>') {
                         res.header = Some(line[1..].to_string());
                     }
-                },
+                }
                 None => panic!("Reached EOF in FASTA parsing; No header in file?"),
             }
         }
@@ -112,14 +114,14 @@ impl Iterator for FastaReader {
     type Item = [String; 2];
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.seq_buf.clear();   
+        self.seq_buf.clear();
 
         while let Some(l) = self.lines.next() {
             let line = l.unwrap();
             if line.starts_with('>') {
                 let res = [self.header.clone().unwrap(), self.seq_buf.clone()];
                 self.header = Some(line[1..].to_string());
-                return Some(res)
+                return Some(res);
             } else {
                 self.seq_buf.push_str(&line);
             }
@@ -147,23 +149,21 @@ impl FastaSeqs {
             headers.push(header);
             seqs.push(seq);
         }
-        FastaSeqs {
-            headers,
-            seqs
-        }
+        FastaSeqs { headers, seqs }
     }
 }
-
 
 // header -> sequence mapping
 #[derive(Debug)]
 pub struct FastaMap {
-    pub id_to_seq: HashMap<String, String>
+    pub id_to_seq: HashMap<String, String>,
 }
 
 impl FastaMap {
     pub fn default() -> Self {
-        FastaMap { id_to_seq: HashMap::new() }
+        FastaMap {
+            id_to_seq: HashMap::new(),
+        }
     }
 
     pub fn from_fasta(path: &Path) -> Self {
@@ -175,35 +175,34 @@ impl FastaMap {
         FastaMap { id_to_seq: entries }
     }
 
-    pub fn from_index_with_ids (
-        path: &Path,
-        index: &FastaIndex,
-        ids: &[String]
-    ) -> Self
-    {
+    pub fn from_index_with_ids(path: &Path, index: &FastaIndex, ids: &[String]) -> Self {
         let mut res = HashMap::new();
         let mut fasta_handle = open_fasta(path);
         if let FastaHandle::Compressed(_) = fasta_handle {
-            panic!("Tried to use index on non seekable compressed file: {:?}", path);
+            panic!(
+                "Tried to use index on non seekable compressed file: {:?}",
+                path
+            );
         }
 
         for k in ids {
             if let Some(v) = index.id_to_offset.get(k) {
                 let mut seq_buf = String::new();
-                fasta_handle.seek(io::SeekFrom::Start(*v))
+                fasta_handle
+                    .seek(io::SeekFrom::Start(*v))
                     .expect("File seek failed in `from_index_with_ids`.");
-                
+
                 let mut seen_header = false;
                 for line in io::BufReader::new(&mut fasta_handle).lines() {
                     let lstring = line.unwrap();
                     if lstring.starts_with('>') {
                         if seen_header {
-                            break
+                            break;
                         } else {
                             seen_header = true;
                         }
                     } else if lstring == "" {
-                        break
+                        break;
                     } else {
                         seq_buf.push_str(&lstring);
                     }
@@ -211,7 +210,7 @@ impl FastaMap {
                 res.insert((*k).to_string(), seq_buf);
             }
         }
-        FastaMap{ id_to_seq: res }
+        FastaMap { id_to_seq: res }
     }
 
     pub fn to_fasta(&self, path: &Path) {
@@ -231,7 +230,9 @@ impl FastaMap {
 }
 
 #[derive(Debug)]
-pub struct MissingID { pub id: String }
+pub struct MissingID {
+    pub id: String,
+}
 
 impl fmt::Display for MissingID {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -248,7 +249,7 @@ impl error::Error for MissingID {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FastaIndex {
-    id_to_offset: HashMap<String, u64>
+    id_to_offset: HashMap<String, u64>,
 }
 
 impl FastaIndex {
@@ -257,14 +258,18 @@ impl FastaIndex {
 
         let fasta_handle = open_fasta(path);
         if let FastaHandle::Compressed(_) = fasta_handle {
-            panic!("Tried to build index on non seekable compressed file: {:?}", path);
+            panic!(
+                "Tried to build index on non seekable compressed file: {:?}",
+                path
+            );
         }
         let mut reader = io::BufReader::new(fasta_handle);
         let mut line_buf = String::new();
         let mut global_offset: u64 = 0;
 
-        let mut len = reader.read_line(&mut line_buf)
-                            .expect("Failed to read line!");
+        let mut len = reader
+            .read_line(&mut line_buf)
+            .expect("Failed to read line!");
         while len != 0 {
             if line_buf.starts_with('>') {
                 let header_split = line_buf.split('|').collect::<Vec<&str>>();
@@ -280,11 +285,12 @@ impl FastaIndex {
 
             global_offset += len as u64;
             line_buf.clear();
-            len = reader.read_line(&mut line_buf)
-                        .expect("Failed to read line!");
+            len = reader
+                .read_line(&mut line_buf)
+                .expect("Failed to read line!");
         }
 
-        FastaIndex{ id_to_offset: res }
+        FastaIndex { id_to_offset: res }
     }
 
     pub fn from_json(path: &Path) -> Self {
@@ -303,7 +309,6 @@ impl FastaIndex {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -318,8 +323,11 @@ mod tests {
         expected.insert("G1KTG2".to_string(), 1638_u64);
         expected.insert("Q8I5U1".to_string(), 2189_u64);
         expected.insert("P93158".to_string(), 359_u64);
-        
-        assert_eq!(FastaIndex::new(Path::new("./resources/test.fasta")).id_to_offset, expected);
+
+        assert_eq!(
+            FastaIndex::new(Path::new("./resources/test.fasta")).id_to_offset,
+            expected
+        );
     }
 
     #[test]
@@ -328,7 +336,7 @@ mod tests {
         let fasta_map = FastaMap::from_index_with_ids(
             Path::new("./resources/test.fasta"),
             &index,
-            &["P9WNK5".to_string(), "Q8I5U1".to_string()]
+            &["P9WNK5".to_string(), "Q8I5U1".to_string()],
         );
         assert_eq!(fasta_map.id_to_seq.len(), 2);
         println!("{:?}", fasta_map);
