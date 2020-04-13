@@ -9,7 +9,7 @@ use serde::{Serialize, Deserialize};
 use std::fs::{File, read_to_string};
 use std::path::Path;
 use std::io;
-use std::io::BufRead;
+use std::io::{BufRead, BufWriter};
 use hashbrown::HashMap;
 use std::error;
 use std::fmt;
@@ -215,15 +215,15 @@ impl FastaMap {
     }
 
     pub fn to_fasta(&self, path: &Path) {
-        let mut file = match File::create(path) {
+        let mut f = match File::create(path) {
             Err(why) => panic!("couldn't create {:?}: {:?}", path, why),
-            Ok(file) => file,
+            Ok(file) => BufWriter::new(file),
         };
         for (k, v) in self.id_to_seq.iter() {
-            if let Err(why) = file.write_all(format!(">{}\n", k).as_bytes()) {
+            if let Err(why) = f.write_all(format!(">{}\n", k).as_bytes()) {
                 panic!("couldn't write to {:?}: {:?}", path, why)
             };
-            if let Err(why) = file.write_all(format!("{}\n\n", v).as_bytes()) {
+            if let Err(why) = f.write_all(format!("{}\n\n", v).as_bytes()) {
                 panic!("couldn't write to {:?}: {:?}", path, why)
             };
         }
