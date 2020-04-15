@@ -153,7 +153,43 @@ impl FastaSeqs {
     }
 }
 
-// header -> sequence mapping
+/// A HashMap mapping sequence ids to sequence lengths.
+#[derive(Debug)]
+pub struct FastaLengths {
+    sequence_lengths: HashMap<String, usize>,
+}
+
+impl FastaLengths {
+    pub fn default() -> Self {
+        FastaLengths {
+            sequence_lengths: HashMap::new(),
+        }
+    }
+
+    pub fn from_fasta(path: &Path) -> Self {
+        let reader = FastaReader::new(path);
+        let mut entries: HashMap<String, usize> = HashMap::new();
+        for [header, seq] in reader {
+            entries.insert(header, seq.len());
+        }
+        FastaLengths {
+            sequence_lengths: entries,
+        }
+    }
+
+    /// Writes the ID -> Sequence length mapping to .json.
+    pub fn to_json(&self, outpath: &Path) {
+        let mut file = match File::create(&outpath) {
+            Err(why) => panic!("couldn't create {:?}: {:?}", outpath, why),
+            Ok(file) => BufWriter::new(file),
+        };
+        if let Err(why) = serde_json::to_writer(&mut file, &self.sequence_lengths) {
+            panic!("couldn't write to {:?}: {:?}", outpath, why)
+        }
+    }
+}
+
+/// A HashMap representation of a Fasta file.
 #[derive(Debug)]
 pub struct FastaMap {
     pub id_to_seq: HashMap<String, String>,
