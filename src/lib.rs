@@ -167,7 +167,7 @@ impl FastaSeqs {
 /// A HashMap mapping sequence ids to sequence lengths.
 #[derive(Debug)]
 pub struct FastaLengths {
-    sequence_lengths: HashMap<String, usize>,
+    pub sequence_lengths: HashMap<String, usize>,
 }
 
 impl FastaLengths {
