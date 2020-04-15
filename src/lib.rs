@@ -38,23 +38,34 @@ impl Seek for FastaHandle {
     }
 }
 
-pub fn open_fasta(path: &Path) -> FastaHandle {
-    if let Some(extension) = path.extension() {
-        match extension.to_str().unwrap() {
-            "gz" => {
-                let fin = File::open(path)
-                    .unwrap_or_else(|_| panic!("Could not open path: {}", path.display()));
-                FastaHandle::Compressed(GzDecoder::new(fin))
+impl FastaHandle {
+    pub fn open_fasta(path: &Path) -> FastaHandle {
+        if let Some(extension) = path.extension() {
+            match extension.to_str().unwrap() {
+                "gz" => {
+                    let fin = File::open(path)
+                        .unwrap_or_else(|_| panic!("Could not open path: {}", path.display()));
+                    FastaHandle::Compressed(GzDecoder::new(fin))
+                }
+                _ => FastaHandle::Uncompressed(
+                    File::open(path)
+                        .unwrap_or_else(|_| panic!("Could not open path: {}", path.display())),
+                ),
             }
-            _ => FastaHandle::Uncompressed(
+        } else {
+            FastaHandle::Uncompressed(
                 File::open(path)
                     .unwrap_or_else(|_| panic!("Could not open path: {}", path.display())),
-            ),
+            )
         }
+    }
+}
+
+fn seq_id_from_header(line: &str) -> &str {
+    if line.contains('|') {
+        line.split('|').collect::<Vec<&str>>()[1]
     } else {
-        FastaHandle::Uncompressed(
-            File::open(path).unwrap_or_else(|_| panic!("Could not open path: {}", path.display())),
-        )
+        line
     }
 }
 
@@ -170,7 +181,7 @@ impl FastaLengths {
         let reader = FastaReader::new(path);
         let mut entries: HashMap<String, usize> = HashMap::new();
         for [header, seq] in reader {
-            entries.insert(header, seq.len());
+            entries.insert(seq_id_from_header(&header).to_string(), seq.len());
         }
         FastaLengths {
             sequence_lengths: entries,
@@ -213,7 +224,7 @@ impl FastaMap {
 
     pub fn from_index_with_ids(path: &Path, index: &FastaIndex, ids: &[String]) -> Self {
         let mut res = HashMap::new();
-        let mut fasta_handle = open_fasta(path);
+        let mut fasta_handle = FastaHandle::open_fasta(path);
         if let FastaHandle::Compressed(_) = fasta_handle {
             panic!(
                 "Tried to use index on non seekable compressed file: {:?}",
@@ -292,7 +303,7 @@ impl FastaIndex {
     pub fn new(path: &Path) -> Self {
         let mut res = HashMap::new();
 
-        let fasta_handle = open_fasta(path);
+        let fasta_handle = FastaHandle::open_fasta(path);
         if let FastaHandle::Compressed(_) = fasta_handle {
             panic!(
                 "Tried to build index on non seekable compressed file: {:?}",
@@ -308,12 +319,7 @@ impl FastaIndex {
             .expect("Failed to read line!");
         while len != 0 {
             if line_buf.starts_with('>') {
-                let header_split = line_buf.split('|').collect::<Vec<&str>>();
-                let key = if header_split.len() > 1 {
-                    header_split[1]
-                } else {
-                    header_split[0]
-                };
+                let key = seq_id_from_header(&line_buf);
                 if let Some(_old_entry) = res.insert(key.to_string(), global_offset) {
                     panic!("Multiple entries found for id: {:?}", key);
                 };
