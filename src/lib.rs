@@ -2,7 +2,7 @@ extern crate flate2;
 extern crate hashbrown;
 extern crate serde;
 
-use flate2::bufread::GzDecoder;
+use flate2::bufread::MultiGzDecoder;
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 use std::error;
@@ -16,7 +16,7 @@ use std::path::Path;
 
 #[derive(Debug)]
 pub enum FastaHandle {
-    Compressed(GzDecoder<BufReader<File>>),
+    Compressed(MultiGzDecoder<BufReader<File>>),
     Uncompressed(BufReader<File>),
 }
 
@@ -45,7 +45,7 @@ impl FastaHandle {
                 "gz" => {
                     let fin = File::open(path)
                         .unwrap_or_else(|_| panic!("Could not open path: {}", path.display()));
-                    FastaHandle::Compressed(GzDecoder::new(BufReader::new(fin)))
+                    FastaHandle::Compressed(MultiGzDecoder::new(BufReader::new(fin)))
                 }
                 _ => FastaHandle::Uncompressed(BufReader::new(
                     File::open(path)
@@ -76,7 +76,7 @@ pub fn open(path: &Path) -> Box<dyn std::io::Read> {
             "gz" => {
                 let fin = File::open(path)
                     .unwrap_or_else(|_| panic!("Could not open path: {}", path.display()));
-                Box::new(GzDecoder::new(BufReader::new(fin)))
+                Box::new(MultiGzDecoder::new(BufReader::new(fin)))
             }
             _ => Box::new(BufReader::new(File::open(path).unwrap_or_else(|_| {
                 panic!("Could not open path: {}", path.display())
