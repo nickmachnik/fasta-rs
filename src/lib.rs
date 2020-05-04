@@ -163,6 +163,46 @@ impl FastaSeqs {
     }
 }
 
+/// A convenience struct to extract and write
+/// the accessions from fasta deflines.
+#[derive(Debug)]
+pub struct FastaAccessions {
+    pub accessions: Vec<String>,
+}
+
+impl FastaAccessions {
+    pub fn default() -> Self {
+        FastaAccessions {
+            accessions: Vec::new(),
+        }
+    }
+
+    pub fn from_fasta(path: &Path) -> Self {
+        let reader = FastaReader::new(path);
+        let mut accessions = Vec::new();
+        for [header, _seq] in reader {
+            accessions.push(seq_id_from_header(&header).to_string());
+        }
+        FastaAccessions { accessions }
+    }
+
+    /// Writes the accessions to json.
+    pub fn to_json(&self, outpath: &Path) -> Result<(), io::Error> {
+        let mut file = BufWriter::new(File::create(&outpath)?);
+        serde_json::to_writer(&mut file, &self.accessions)?;
+        Ok(())
+    }
+
+    /// Writes the accessions to a txt file, one per line.
+    pub fn to_tsv(&self, outpath: &Path) -> Result<(), io::Error> {
+        let mut file = BufWriter::new(File::create(&outpath)?);
+        for id in &self.accessions {
+            file.write_all(format!("{}\n", id).as_bytes())?;
+        }
+        Ok(())
+    }
+}
+
 /// A HashMap mapping sequence ids to sequence lengths.
 #[derive(Debug)]
 pub struct FastaLengths {
@@ -188,14 +228,10 @@ impl FastaLengths {
     }
 
     /// Writes the ID -> Sequence length mapping to .json.
-    pub fn to_json(&self, outpath: &Path) {
-        let mut file = match File::create(&outpath) {
-            Err(why) => panic!("couldn't create {:?}: {:?}", outpath, why),
-            Ok(file) => BufWriter::new(file),
-        };
-        if let Err(why) = serde_json::to_writer(&mut file, &self.sequence_lengths) {
-            panic!("couldn't write to {:?}: {:?}", outpath, why)
-        }
+    pub fn to_json(&self, outpath: &Path) -> Result<(), io::Error> {
+        let mut file = BufWriter::new(File::create(&outpath)?);
+        serde_json::to_writer(&mut file, &self.sequence_lengths)?;
+        Ok(())
     }
 }
 
@@ -334,19 +370,16 @@ impl FastaIndex {
         FastaIndex { id_to_offset: res }
     }
 
-    pub fn from_json(path: &Path) -> Self {
-        let json_file_str = read_to_string(path).expect("file not found");
-        serde_json::from_str(&json_file_str).expect("error while reading json")
+    pub fn from_json(path: &Path) -> Result<Self, io::Error> {
+        let json_file_str = read_to_string(path)?;
+        let res = serde_json::from_str(&json_file_str)?;
+        Ok(res)
     }
 
-    pub fn to_json(&self, outpath: &Path) {
-        let mut file = match File::create(&outpath) {
-            Err(why) => panic!("couldn't create {:?}: {:?}", outpath, why),
-            Ok(file) => BufWriter::new(file),
-        };
-        if let Err(why) = serde_json::to_writer(&mut file, self) {
-            panic!("couldn't write to {:?}: {:?}", outpath, why)
-        }
+    pub fn to_json(&self, outpath: &Path) -> Result<(), io::Error> {
+        let mut file = BufWriter::new(File::create(&outpath)?);
+        serde_json::to_writer(&mut file, self)?;
+        Ok(())
     }
 }
 
@@ -388,8 +421,8 @@ mod tests {
     #[test]
     fn index_dump_and_load() {
         let index = FastaIndex::new(Path::new("./resources/test.fasta"));
-        index.to_json(Path::new("./resources/test.index"));
+        index.to_json(Path::new("./resources/test.index")).unwrap();
         let loaded = FastaIndex::from_json(Path::new("./resources/test.index"));
-        assert_eq!(index.id_to_offset, loaded.id_to_offset);
+        assert_eq!(index.id_to_offset, loaded.unwrap().id_to_offset);
     }
 }
