@@ -314,7 +314,7 @@ impl FastaMap {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FastaIndex {
-    id_to_offset: HashMap<String, u64>,
+    pub id_to_offset: HashMap<String, u64>,
 }
 
 impl FastaIndex {
@@ -369,8 +369,8 @@ impl FastaIndex {
 /// A single .fasta entry with description and sequence fields.
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 struct FastaEntry {
-    description: String,
-    sequence: String,
+    pub description: String,
+    pub sequence: String,
 }
 
 impl FastaEntry {
