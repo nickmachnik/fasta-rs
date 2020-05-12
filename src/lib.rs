@@ -6,7 +6,6 @@ use flate2::bufread::MultiGzDecoder;
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 use std::error;
-use std::fmt;
 use std::fs::{read_to_string, File};
 use std::io;
 use std::io::Write;
@@ -310,24 +309,6 @@ impl FastaMap {
                 panic!("couldn't write to {:?}: {:?}", path, why)
             };
         }
-    }
-}
-
-#[derive(Debug)]
-pub struct MissingID {
-    pub id: String,
-}
-
-impl fmt::Display for MissingID {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ID {} not found in index.", self.id)
-    }
-}
-
-impl error::Error for MissingID {
-    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
-        // Generic error, underlying cause isn't tracked.
-        None
     }
 }
 
