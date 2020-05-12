@@ -14,6 +14,8 @@ use std::io::{BufRead, BufReader, BufWriter};
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
 
+mod errors;
+
 #[derive(Debug)]
 pub enum FastaHandle {
     Compressed(MultiGzDecoder<BufReader<File>>),
@@ -383,6 +385,47 @@ impl FastaIndex {
     }
 }
 
+/// A single .fasta entry with description and sequence fields.
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+struct FastaEntry {
+    description: String,
+    sequence: String,
+}
+
+impl FastaEntry {
+    pub fn from_index(data: &Path, index: u64) -> Result<Self, Box<dyn error::Error>> {
+        let mut handle = BufReader::new(File::open(data)?);
+        handle.seek(SeekFrom::Start(index))?;
+
+        let mut lines = handle.lines();
+        let line = lines.next().unwrap().unwrap();
+        let description = if line.starts_with('>') {
+            line[1..].to_string()
+        } else {
+            return Err(Box::new(errors::ParseError::new(
+                errors::ErrorKind::IndexNotAtDescription,
+                "No description line found at index when reading entry!",
+            )));
+        };
+
+        let mut entry = FastaEntry {
+            description,
+            sequence: String::new(),
+        };
+
+        for l in lines {
+            let line = l.unwrap();
+            if line == "" || line.starts_with('>') {
+                break;
+            } else {
+                entry.sequence.push_str(&line);
+            }
+        }
+
+        Ok(entry)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -424,5 +467,23 @@ mod tests {
         index.to_json(Path::new("./resources/test.index")).unwrap();
         let loaded = FastaIndex::from_json(Path::new("./resources/test.index"));
         assert_eq!(index.id_to_offset, loaded.unwrap().id_to_offset);
+    }
+
+    #[test]
+    fn individual_entry_from_index() {
+        let index = FastaIndex::new(Path::new("./resources/test.fasta"));
+        let entry = FastaEntry::from_index(
+            Path::new("./resources/test.fasta"),
+            *index.id_to_offset.get("P93158").unwrap(),
+        )
+        .unwrap();
+        let exp_entry = FastaEntry {
+            description: "tr|P93158|P93158_GOSHI Annexin (Fragment) OS=Gossypium hirsutum OX=3635 GN=AnnGh2 PE=2 SV=1".to_string(),
+            sequence: "\
+            TLKVPVHVPSPSEDAEWQLRKAFEGWGTNEQLIIDILAHRNAAQRNSIRKVYGEAYGEDLLKCLEKELTSDFERAVLLFTLDPAERDAHLANEATKKFTSSNWILME\
+            IACSRSSHELLNVKKAYHARYKKSLEEDVAHHTTGEYRKLLVPLVSAFRYEGEEVNMTLAKSEAKILHDKISDKHYTDEEVIRIVSTRSKAQLNATLNHYNTSFGNA\
+            INKDLKADPSDEFLKLLRAVIKCLTTPEQYFEKVLRQAINKLGSDEWALTRVVTTRAEVDMVRIKEAYQRRNSIPLEQAIAKDTSGDYEKFLLALIGAGDA".to_string()
+        };
+        assert_eq!(exp_entry, entry);
     }
 }
