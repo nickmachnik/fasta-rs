@@ -368,7 +368,7 @@ impl FastaIndex {
 
 /// A single .fasta entry with description and sequence fields.
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-struct FastaEntry {
+pub struct FastaEntry {
     pub description: String,
     pub sequence: String,
 }
