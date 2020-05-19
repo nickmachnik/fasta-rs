@@ -62,9 +62,9 @@ impl FastaHandle {
     }
 }
 
-fn seq_id_from_description<'a>(line: &'a str, separator: &'a str) -> &'a str {
+fn seq_id_from_description<'a>(line: &'a str, separator: &'a str, id_index: usize) -> &'a str {
     if line.contains(separator) {
-        line.split(separator).collect::<Vec<&str>>()[1]
+        line.split(separator).collect::<Vec<&str>>()[id_index]
     } else {
         // remove `>`
         &line[1..]
@@ -183,7 +183,7 @@ impl FastaAccessions {
         let reader = FastaReader::new(path);
         let mut accessions = Vec::new();
         for [header, _seq] in reader {
-            accessions.push(seq_id_from_description(&header, "|").to_string());
+            accessions.push(seq_id_from_description(&header, "|", 1).to_string());
         }
         FastaAccessions { accessions }
     }
@@ -222,7 +222,10 @@ impl FastaLengths {
         let reader = FastaReader::new(path);
         let mut entries: HashMap<String, usize> = HashMap::new();
         for [header, seq] in reader {
-            entries.insert(seq_id_from_description(&header, "|").to_string(), seq.len());
+            entries.insert(
+                seq_id_from_description(&header, "|", 0).to_string(),
+                seq.len(),
+            );
         }
         FastaLengths {
             sequence_lengths: entries,
@@ -319,7 +322,7 @@ pub struct FastaIndex {
 }
 
 impl FastaIndex {
-    pub fn new(path: &Path, separator: &str) -> Self {
+    pub fn new(path: &Path, separator: &str, id_index: usize) -> Self {
         let mut res = HashMap::new();
 
         let fasta_handle = FastaHandle::open_fasta(path);
@@ -339,7 +342,7 @@ impl FastaIndex {
         while len != 0 {
             if line_buf.starts_with('>') {
                 line_buf.pop();
-                let key = seq_id_from_description(&line_buf, separator);
+                let key = seq_id_from_description(&line_buf, separator, id_index);
                 if let Some(_old_entry) = res.insert(key.to_string(), global_offset) {
                     panic!("Multiple entries found for id: {:?}", key);
                 };
@@ -425,14 +428,14 @@ mod tests {
         expected.insert("P93158".to_string(), 359_u64);
 
         assert_eq!(
-            FastaIndex::new(Path::new("./resources/test.fasta"), "|").id_to_offset,
+            FastaIndex::new(Path::new("./resources/test.fasta"), "|", 1).id_to_offset,
             expected
         );
     }
 
     #[test]
     fn indexed_reading() {
-        let index = FastaIndex::new(Path::new("./resources/test.fasta"), "|");
+        let index = FastaIndex::new(Path::new("./resources/test.fasta"), "|", 1);
         let fasta_map = FastaMap::from_index_with_ids(
             Path::new("./resources/test.fasta"),
             &index,
@@ -446,7 +449,7 @@ mod tests {
 
     #[test]
     fn index_dump_and_load() {
-        let index = FastaIndex::new(Path::new("./resources/test.fasta"), "|");
+        let index = FastaIndex::new(Path::new("./resources/test.fasta"), "|", 1);
         index.to_json(Path::new("./resources/test.index")).unwrap();
         let loaded = FastaIndex::from_json(Path::new("./resources/test.index"));
         assert_eq!(index.id_to_offset, loaded.unwrap().id_to_offset);
@@ -454,7 +457,7 @@ mod tests {
 
     #[test]
     fn individual_entry_from_index() {
-        let index = FastaIndex::new(Path::new("./resources/test.fasta"), "|");
+        let index = FastaIndex::new(Path::new("./resources/test.fasta"), "|", 1);
         let entry = FastaEntry::from_index(
             Path::new("./resources/test.fasta"),
             *index.id_to_offset.get("P93158").unwrap(),
