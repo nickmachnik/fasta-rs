@@ -66,6 +66,7 @@ fn seq_id_from_header(line: &str) -> &str {
     if line.contains('|') {
         line.split('|').collect::<Vec<&str>>()[1]
     } else {
+        // remove `>`
         &line[1..]
     }
 }
@@ -337,6 +338,7 @@ impl FastaIndex {
             .expect("Failed to read line!");
         while len != 0 {
             if line_buf.starts_with('>') {
+                line_buf.pop();
                 let key = seq_id_from_header(&line_buf);
                 if let Some(_old_entry) = res.insert(key.to_string(), global_offset) {
                     panic!("Multiple entries found for id: {:?}", key);
