@@ -66,7 +66,7 @@ fn seq_id_from_header(line: &str) -> &str {
     if line.contains('|') {
         line.split('|').collect::<Vec<&str>>()[1]
     } else {
-        line
+        &line[1..]
     }
 }
 
