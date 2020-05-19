@@ -64,7 +64,12 @@ impl FastaHandle {
 
 fn seq_id_from_description<'a>(line: &'a str, separator: &'a str, id_index: usize) -> &'a str {
     if line.contains(separator) {
-        line.split(separator).collect::<Vec<&str>>()[id_index]
+        let fields = line.split(separator).collect::<Vec<&str>>();
+        if id_index == 0 {
+            &fields[id_index][1..]
+        } else {
+            fields[id_index]
+        }
     } else {
         // remove `>`
         &line[1..]
