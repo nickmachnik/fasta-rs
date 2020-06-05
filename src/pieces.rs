@@ -57,12 +57,6 @@ pub struct FastaLengths {
 }
 
 impl FastaLengths {
-    pub fn default() -> Self {
-        FastaLengths {
-            sequence_lengths: HashMap::new(),
-        }
-    }
-
     pub fn from_fasta(path: &Path) -> Self {
         let reader = FastaReader::new(path);
         let mut entries: HashMap<String, usize> = HashMap::new();
@@ -131,8 +125,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn accessions_from_fasta_short() {}
+    fn accessions_from_fasta_short() {
+        assert_eq!(
+            FastaAccessions::from_fasta(Path::new("./resources/test_short_descr.fasta")).accessions,
+            vec!["Q2HZH0", "P93158", "H0VS30", "P9WNK5", "G1KTG2", "Q8I5U1", "G7PNW8"]
+        )
+    }
 
     #[test]
-    fn accessions_from_fasta_long() {}
+    fn accessions_from_fasta_long() {
+        assert_eq!(
+            FastaAccessions::from_fasta(Path::new("./resources/test.fasta")).accessions,
+            vec!["Q2HZH0", "P93158", "H0VS30", "P9WNK5", "G1KTG2", "Q8I5U1", "G7PNW8"]
+        )
+    }
 }
