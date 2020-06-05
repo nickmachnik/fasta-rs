@@ -1,0 +1,108 @@
+use crate::helpers::open;
+use flate2::bufread::MultiGzDecoder;
+use std::fs::File;
+use std::io::prelude::Seek;
+use std::io::{BufRead, BufReader, Read, SeekFrom};
+use std::path::Path;
+
+#[derive(Debug)]
+pub enum FastaHandle {
+    Compressed(MultiGzDecoder<BufReader<File>>),
+    Uncompressed(BufReader<File>),
+}
+
+impl Read for FastaHandle {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        match self {
+            FastaHandle::Compressed(s) => s.read(buf),
+            FastaHandle::Uncompressed(s) => s.read(buf),
+        }
+    }
+}
+
+impl Seek for FastaHandle {
+    fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
+        match self {
+            FastaHandle::Compressed(_s) => panic!("Cannot seek in gzipped file!"),
+            FastaHandle::Uncompressed(s) => s.seek(pos),
+        }
+    }
+}
+
+impl FastaHandle {
+    pub fn open_fasta(path: &Path) -> FastaHandle {
+        if let Some(extension) = path.extension() {
+            match extension.to_str().unwrap() {
+                "gz" => {
+                    let fin = File::open(path)
+                        .unwrap_or_else(|_| panic!("Could not open path: {}", path.display()));
+                    FastaHandle::Compressed(MultiGzDecoder::new(BufReader::new(fin)))
+                }
+                _ => FastaHandle::Uncompressed(BufReader::new(
+                    File::open(path)
+                        .unwrap_or_else(|_| panic!("Could not open path: {}", path.display())),
+                )),
+            }
+        } else {
+            FastaHandle::Uncompressed(BufReader::new(
+                File::open(path)
+                    .unwrap_or_else(|_| panic!("Could not open path: {}", path.display())),
+            ))
+        }
+    }
+}
+
+pub struct FastaReader {
+    lines: std::io::Lines<std::io::BufReader<std::boxed::Box<dyn std::io::Read>>>,
+    header: Option<String>,
+    seq_buf: String,
+}
+
+impl FastaReader {
+    pub fn new(path: &Path) -> Self {
+        let reader = open(&path);
+        let mut res = FastaReader {
+            lines: BufReader::new(reader).lines(),
+            header: None,
+            seq_buf: String::new(),
+        };
+
+        // find first header
+        while res.header == None {
+            match res.lines.next() {
+                Some(s) => {
+                    let line = s.unwrap();
+                    if line.starts_with('>') {
+                        res.header = Some(line.to_string());
+                    }
+                }
+                None => panic!("Reached EOF in FASTA parsing; No header in file?"),
+            }
+        }
+        res
+    }
+}
+
+impl Iterator for FastaReader {
+    type Item = [String; 2];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.seq_buf.clear();
+
+        while let Some(l) = self.lines.next() {
+            let line = l.unwrap();
+            if line.starts_with('>') {
+                let res = [self.header.clone().unwrap(), self.seq_buf.clone()];
+                self.header = Some(line);
+                return Some(res);
+            } else {
+                self.seq_buf.push_str(&line);
+            }
+        }
+
+        match self.seq_buf.len() {
+            0 => None,
+            _ => Some([self.header.clone().unwrap(), self.seq_buf.clone()]),
+        }
+    }
+}

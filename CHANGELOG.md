@@ -9,6 +9,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+### Changed
+
+- split lib into read, map, index, pieces and helpers modules.
+
 ## [0.1.0]
 
 - Initial release
