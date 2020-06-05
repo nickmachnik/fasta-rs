@@ -36,3 +36,21 @@ pub fn open(path: &Path) -> Box<dyn std::io::Read> {
         })))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn seq_id_short_descr() {
+        let descr = ">Q2HZH0";
+        assert_eq!(seq_id_from_description(descr, "|", 1), "Q2HZH0");
+    }
+
+    #[test]
+    fn seq_id_long_descr() {
+        let descr =
+            ">sp|Q2HZH0|IL1B_PUSHI Interleukin-1 beta OS=Pusa hispida OX=9718 GN=IL1B PE=2 SV=1";
+        assert_eq!(seq_id_from_description(descr, "|", 1), "Q2HZH0");
+    }
+}
