@@ -52,9 +52,12 @@ impl FastaHandle {
     }
 }
 
+/// A reader that visits entries in a FASTA file one by one.
+///
+///
 pub struct FastaReader {
     lines: std::io::Lines<std::io::BufReader<std::boxed::Box<dyn std::io::Read>>>,
-    header: Option<String>,
+    description: Option<String>,
     seq_buf: String,
 }
 
@@ -63,20 +66,20 @@ impl FastaReader {
         let reader = open(&path);
         let mut res = FastaReader {
             lines: BufReader::new(reader).lines(),
-            header: None,
+            description: None,
             seq_buf: String::new(),
         };
 
-        // find first header
-        while res.header == None {
+        // find first description
+        while res.description == None {
             match res.lines.next() {
                 Some(s) => {
                     let line = s.unwrap();
                     if line.starts_with('>') {
-                        res.header = Some(line.to_string());
+                        res.description = Some(line.to_string());
                     }
                 }
-                None => panic!("Reached EOF in FASTA parsing; No header in file?"),
+                None => panic!("Reached EOF in FASTA parsing; No description in file?"),
             }
         }
         res
@@ -92,8 +95,8 @@ impl Iterator for FastaReader {
         while let Some(l) = self.lines.next() {
             let line = l.unwrap();
             if line.starts_with('>') {
-                let res = [self.header.clone().unwrap(), self.seq_buf.clone()];
-                self.header = Some(line);
+                let res = [self.description.clone().unwrap(), self.seq_buf.clone()];
+                self.description = Some(line);
                 return Some(res);
             } else {
                 self.seq_buf.push_str(&line);
@@ -102,7 +105,7 @@ impl Iterator for FastaReader {
 
         match self.seq_buf.len() {
             0 => None,
-            _ => Some([self.header.clone().unwrap(), self.seq_buf.clone()]),
+            _ => Some([self.description.clone().unwrap(), self.seq_buf.clone()]),
         }
     }
 }
