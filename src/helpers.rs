@@ -1,3 +1,5 @@
+//! Helper functions that perform operations used across the whole crate.
+
 use flate2::bufread::MultiGzDecoder;
 use std::fs::File;
 use std::io::BufReader;

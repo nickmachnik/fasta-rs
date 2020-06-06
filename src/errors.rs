@@ -3,7 +3,7 @@
 use std::error;
 use std::fmt;
 
-/// The error type for everything that can go wrong in fasta parsing.
+/// The error type for everything that can go wrong in FASTA parsing.
 #[derive(Debug)]
 pub struct ParseError<'a> {
     kind: ErrorKind,

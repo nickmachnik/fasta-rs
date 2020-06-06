@@ -1,3 +1,5 @@
+//! Utilities for reading whole FASTA files into iterators.
+
 use crate::helpers::open;
 use flate2::bufread::MultiGzDecoder;
 use std::fs::File;

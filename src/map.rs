@@ -1,3 +1,5 @@
+//! A HashMap representation of a FASTA file.
+
 use crate::index::FastaIndex;
 use crate::read::{FastaHandle, FastaReader};
 
