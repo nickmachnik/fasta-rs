@@ -54,7 +54,19 @@ impl FastaHandle {
 
 /// A reader that visits entries in a FASTA file one by one.
 ///
+/// # Examples
 ///
+/// Iterate through a FASTA file:
+/// ```
+/// use fasta_rs::read::FastaReader
+/// use std::path::Path;
+///
+/// let infile = Path::new("foo.fasta");
+/// for [description, _seq] in FastaReader::new(infile) {
+///     println!("{:?}", description);
+///     println!("{:?}", seq);
+/// }
+/// ```
 pub struct FastaReader {
     lines: std::io::Lines<std::io::BufReader<std::boxed::Box<dyn std::io::Read>>>,
     description: Option<String>,
