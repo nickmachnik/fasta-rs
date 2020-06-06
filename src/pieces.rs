@@ -16,19 +16,31 @@ use std::io::BufWriter;
 use std::io::{BufRead, BufReader, SeekFrom, Write};
 use std::path::Path;
 
-/// A convenience struct to extract and write
-/// the accessions from fasta deflines.
+/// A convenience struct for parsing the acession ids from FASTA description lines.
+///
+/// # Examples
+/// Extract the accession ids from a UniProt formatted FASTA and write them to
+/// a tsv file, one per line.
+/// ```
+/// use fasta::pieces::FastaAccessions;
+/// use std::path::Path;
+///
+/// // parse the accessions
+/// let accessions = FastaAccessions::from_fasta(Path::new("./resources/test.fasta"), "|", 1);
+/// // write to tsv
+/// accessions.to_tsv(Path::new("./resources/test.accessions")).expect("Dumping tsv failed");
+/// ```
 #[derive(Debug)]
 pub struct FastaAccessions {
     pub accessions: Vec<String>,
 }
 
 impl FastaAccessions {
-    pub fn from_fasta(path: &Path) -> Self {
+    pub fn from_fasta(path: &Path, separator: &str, id_index: usize) -> Self {
         let reader = FastaReader::new(path);
         let mut accessions = Vec::new();
         for [header, _seq] in reader {
-            accessions.push(seq_id_from_description(&header, "|", 1).to_string());
+            accessions.push(seq_id_from_description(&header, separator, id_index).to_string());
         }
         FastaAccessions { accessions }
     }
@@ -50,19 +62,30 @@ impl FastaAccessions {
     }
 }
 
-/// A HashMap mapping sequence ids to sequence lengths.
+/// A convenient struct that wraps a sequence id to sequence length mapping.
+///
+/// # Examples
+/// ```
+/// use std::path::Path;
+/// use fasta::pieces::FastaLengths;
+///
+/// // parse a fasta file
+/// let lengths = FastaLengths::from_fasta(Path::new("./resources/test.fasta"), "|", 1);
+/// // write to json
+/// lengths.to_json(Path::new("./resources/test.accessions")).expect("JSON dump failed");
+/// ```
 #[derive(Debug, PartialEq)]
 pub struct FastaLengths {
     pub sequence_lengths: HashMap<String, usize>,
 }
 
 impl FastaLengths {
-    pub fn from_fasta(path: &Path) -> Self {
+    pub fn from_fasta(path: &Path, separator: &str, id_index: usize) -> Self {
         let reader = FastaReader::new(path);
         let mut entries: HashMap<String, usize> = HashMap::new();
         for [header, seq] in reader {
             entries.insert(
-                seq_id_from_description(&header, "|", 1).to_string(),
+                seq_id_from_description(&header, separator, id_index).to_string(),
                 seq.len(),
             );
         }
@@ -127,7 +150,8 @@ mod tests {
     #[test]
     fn accessions_from_fasta_short() {
         assert_eq!(
-            FastaAccessions::from_fasta(Path::new("./resources/test_short_descr.fasta")).accessions,
+            FastaAccessions::from_fasta(Path::new("./resources/test_short_descr.fasta"), "|", 1)
+                .accessions,
             vec!["Q2HZH0", "P93158", "H0VS30"]
         )
     }
@@ -135,7 +159,7 @@ mod tests {
     #[test]
     fn accessions_from_fasta_long() {
         assert_eq!(
-            FastaAccessions::from_fasta(Path::new("./resources/test.fasta")).accessions,
+            FastaAccessions::from_fasta(Path::new("./resources/test.fasta"), "|", 1).accessions,
             vec!["Q2HZH0", "P93158", "H0VS30"]
         )
     }
@@ -162,7 +186,7 @@ mod tests {
 
     #[test]
     fn lengths_from_fasta() {
-        let lengths = FastaLengths::from_fasta(Path::new("./resources/test.fasta"));
+        let lengths = FastaLengths::from_fasta(Path::new("./resources/test.fasta"), "|", 1);
         let mut exp_map = HashMap::new();
         exp_map.insert("H0VS30".to_string(), 180);
         exp_map.insert("Q2HZH0".to_string(), 120);

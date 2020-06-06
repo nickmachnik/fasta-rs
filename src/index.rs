@@ -24,13 +24,14 @@ use std::path::Path;
 /// Create and index from a FASTA file and write to json and load:
 /// ```
 /// use fasta::index::FastaIndex;
+/// use std::path::Path;
 ///
 /// // create the index
-/// let index = FastaIndex::new(Path::new("foo.fasta"), "|", 1);
+/// let index = FastaIndex::new(Path::new("./resources/test.fasta"), "|", 1);
 /// // write to file
-/// index.to_json(Path::new("foo.index")).expect("Failed to dump json.");
+/// index.to_json(Path::new("./resources/test.index")).expect("Failed to dump json.");
 /// // load from json
-/// assert_eq!(index, FastaIndex::from_json(Path::new("foo.index")).unwrap());
+/// assert_eq!(index, FastaIndex::from_json(Path::new("./resources/test.index")).unwrap());
 /// ```
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct FastaIndex {

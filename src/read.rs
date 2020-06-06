@@ -61,11 +61,11 @@ impl FastaHandle {
 ///
 /// Iterate through a FASTA file:
 /// ```
-/// use fasta_rs::read::FastaReader
+/// use fasta::read::FastaReader;
 /// use std::path::Path;
 ///
-/// let infile = Path::new("foo.fasta");
-/// for [description, _seq] in FastaReader::new(infile) {
+/// let infile = Path::new("./resources/test.fasta");
+/// for [description, seq] in FastaReader::new(infile) {
 ///     println!("{:?}", description);
 ///     println!("{:?}", seq);
 /// }
