@@ -139,4 +139,24 @@ mod tests {
             vec!["Q2HZH0", "P93158", "H0VS30", "P9WNK5", "G1KTG2", "Q8I5U1", "G7PNW8"]
         )
     }
+
+    #[test]
+    fn get_single_fasta_entry() {
+        let index =
+            crate::index::FastaIndex::from_json(Path::new("./resources/test.index")).unwrap();
+        let entry = FastaEntry::from_index(
+            Path::new("./resources/test.fasta"),
+            *index.id_to_offset.get("P9WNK5").unwrap(),
+        )
+        .unwrap();
+        let expected = FastaEntry {
+            description: "sp|P9WNK5|ESXB_MYCTU ESAT-6-like protein EsxB OS=Mycobacterium \
+                tuberculosis (strain ATCC 25618 / H37Rv) OX=83332 GN=esxB PE=1 SV=1"
+                .to_string(),
+            sequence: "MAEMKTDAATLAQEAGNFERISGDLKTQIDQVESTAGSLQGQWRGAAGTAAQAAVVRFQEAANKQK\
+            QELDEISTNIRQAGVQYSRADEEQQQALSSQMGF"
+                .to_string(),
+        };
+        assert_eq!(entry, expected);
+    }
 }
