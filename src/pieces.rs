@@ -102,7 +102,31 @@ impl FastaLengths {
     }
 }
 
-/// A single .fasta entry with description and sequence fields.
+/// A single FASTA entry with description and header.
+///
+/// # Examples
+/// Read a speciic entry from an indexed FASTA file:
+/// ```
+/// use fasta::index::FastaIndex;
+/// use std::path::Path;
+/// use fasta::pieces::FastaEntry;
+/// let index =
+///     FastaIndex::from_json(Path::new("./resources/test.index")).unwrap();
+/// let entry = FastaEntry::from_index(
+///     Path::new("./resources/test.fasta"),
+///     *index.id_to_offset.get("P93158").unwrap(),
+/// )
+/// .unwrap();
+/// let expected = FastaEntry {
+///     description: "tr|P93158|P93158_GOSHI Annexin (Fragment) OS=Gossypium \
+///     hirsutum OX=3635 GN=AnnGh2 PE=2 SV=1"
+///         .to_string(),
+///     sequence: "TLKVPVHVPSPSEDAEWQLRKAFEGWGTNEQLIIDILAHRNAAQRNSIRKVYGEAYGEDL\
+///     LKCLEKELTSDFERAVLLFTLDPAERDAHLANEATKKFTSSNWILMEIACSRSSHELLNV"
+///         .to_string(),
+/// };
+/// assert_eq!(entry, expected);
+/// ```
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct FastaEntry {
     pub description: String,
