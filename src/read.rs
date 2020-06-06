@@ -7,6 +7,7 @@ use std::io::prelude::Seek;
 use std::io::{BufRead, BufReader, Read, SeekFrom};
 use std::path::Path;
 
+/// An enum that wraps compressed (gz) and uncompressed files.
 #[derive(Debug)]
 pub enum FastaHandle {
     Compressed(MultiGzDecoder<BufReader<File>>),
