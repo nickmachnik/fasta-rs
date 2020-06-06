@@ -51,7 +51,7 @@ impl FastaAccessions {
 }
 
 /// A HashMap mapping sequence ids to sequence lengths.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct FastaLengths {
     pub sequence_lengths: HashMap<String, usize>,
 }
@@ -62,7 +62,7 @@ impl FastaLengths {
         let mut entries: HashMap<String, usize> = HashMap::new();
         for [header, seq] in reader {
             entries.insert(
-                seq_id_from_description(&header, "|", 0).to_string(),
+                seq_id_from_description(&header, "|", 1).to_string(),
                 seq.len(),
             );
         }
@@ -158,5 +158,25 @@ mod tests {
                 .to_string(),
         };
         assert_eq!(entry, expected);
+    }
+
+    #[test]
+    fn lengths_from_fasta() {
+        let lengths = FastaLengths::from_fasta(Path::new("./resources/test.fasta"));
+        let mut exp_map = HashMap::new();
+        exp_map.insert("Q8I5U1".to_string(), 441);
+        exp_map.insert("G1KTG2".to_string(), 435);
+        exp_map.insert("H0VS30".to_string(), 506);
+        exp_map.insert("Q2HZH0".to_string(), 270);
+        exp_map.insert("P93158".to_string(), 315);
+        exp_map.insert("P9WNK5".to_string(), 100);
+        exp_map.insert("G7PNW8".to_string(), 204);
+        assert_eq!(
+            lengths,
+            FastaLengths {
+                sequence_lengths: exp_map
+            }
+        );
+        println!("{:?}", lengths);
     }
 }
