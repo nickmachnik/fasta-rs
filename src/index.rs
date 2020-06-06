@@ -10,6 +10,28 @@ use std::fs::{read_to_string, File};
 use std::io::{BufRead, BufReader, BufWriter, Error};
 use std::path::Path;
 
+/// An index into FASTA files.
+///
+/// Wraps a sequence id -> byte offset mapping. The sequence accessions
+/// provided in the description lines are used as sequence ids.
+/// The description line format has to be specified when creating an index
+/// by indicating the field separator and the index (0-based) of the field
+/// which stores the accession. For example, the standard UniProt format
+/// uses "|" as a separator and stores the accession in the first field.
+///
+/// # Examples
+///
+/// Create and index from a FASTA file and write to json and load:
+/// ```
+/// use fasta::index::FastaIndex;
+///
+/// // create the index
+/// let index = FastaIndex::new(Path::new("foo.fasta"), "|", 1);
+/// // write to file
+/// index.to_json(Path::new("foo.index")).expect("Failed to dump json.");
+/// // load from json
+/// assert_eq!(index, FastaIndex::from_json(Path::new("foo.index")).unwrap());
+/// ```
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct FastaIndex {
     pub id_to_offset: HashMap<String, u64>,
