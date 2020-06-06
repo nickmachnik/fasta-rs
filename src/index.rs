@@ -10,7 +10,7 @@ use std::fs::{read_to_string, File};
 use std::io::{BufRead, BufReader, BufWriter, Error};
 use std::path::Path;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct FastaIndex {
     pub id_to_offset: HashMap<String, u64>,
 }
@@ -73,18 +73,9 @@ mod tests {
 
     #[test]
     fn index_building() {
-        let mut expected = HashMap::new();
-        expected.insert("Q2HZH0".to_string(), 0_u64);
-        expected.insert("G7PNW8".to_string(), 2764_u64);
-        expected.insert("P9WNK5".to_string(), 1403_u64);
-        expected.insert("H0VS30".to_string(), 774_u64);
-        expected.insert("G1KTG2".to_string(), 1638_u64);
-        expected.insert("Q8I5U1".to_string(), 2189_u64);
-        expected.insert("P93158".to_string(), 359_u64);
-
         assert_eq!(
-            FastaIndex::new(Path::new("./resources/test.fasta"), "|", 1).id_to_offset,
-            expected
+            FastaIndex::new(Path::new("./resources/test.fasta"), "|", 1),
+            FastaIndex::from_json(Path::new("./resources/test.index")).unwrap()
         );
     }
 
@@ -94,19 +85,11 @@ mod tests {
         let fasta_map = FastaMap::from_index_with_ids(
             Path::new("./resources/test.fasta"),
             &index,
-            &["P9WNK5".to_string(), "Q8I5U1".to_string()],
+            &["P93158".to_string(), "Q2HZH0".to_string()],
         );
         assert_eq!(fasta_map.id_to_seq.len(), 2);
-        assert!(fasta_map.id_to_seq.contains_key("Q8I5U1"));
-        assert!(fasta_map.id_to_seq.contains_key("P9WNK5"));
-    }
-
-    #[test]
-    fn index_dump_and_load() {
-        let index = FastaIndex::new(Path::new("./resources/test.fasta"), "|", 1);
-        index.to_json(Path::new("./resources/test.index")).unwrap();
-        let loaded = FastaIndex::from_json(Path::new("./resources/test.index"));
-        assert_eq!(index.id_to_offset, loaded.unwrap().id_to_offset);
+        assert!(fasta_map.id_to_seq.contains_key("P93158"));
+        assert!(fasta_map.id_to_seq.contains_key("Q2HZH0"));
     }
 
     #[test]
@@ -117,12 +100,11 @@ mod tests {
             *index.id_to_offset.get("P93158").unwrap(),
         )
         .unwrap();
+
         let exp_entry = FastaEntry {
             description: "tr|P93158|P93158_GOSHI Annexin (Fragment) OS=Gossypium hirsutum OX=3635 GN=AnnGh2 PE=2 SV=1".to_string(),
-            sequence: "\
-            TLKVPVHVPSPSEDAEWQLRKAFEGWGTNEQLIIDILAHRNAAQRNSIRKVYGEAYGEDLLKCLEKELTSDFERAVLLFTLDPAERDAHLANEATKKFTSSNWILME\
-            IACSRSSHELLNVKKAYHARYKKSLEEDVAHHTTGEYRKLLVPLVSAFRYEGEEVNMTLAKSEAKILHDKISDKHYTDEEVIRIVSTRSKAQLNATLNHYNTSFGNA\
-            INKDLKADPSDEFLKLLRAVIKCLTTPEQYFEKVLRQAINKLGSDEWALTRVVTTRAEVDMVRIKEAYQRRNSIPLEQAIAKDTSGDYEKFLLALIGAGDA".to_string()
+            sequence: "TLKVPVHVPSPSEDAEWQLRKAFEGWGTNEQLIIDILAHRNAAQRNSIRKVYGEAYGEDL\
+            LKCLEKELTSDFERAVLLFTLDPAERDAHLANEATKKFTSSNWILMEIACSRSSHELLNV".to_string()
         };
         assert_eq!(exp_entry, entry);
     }

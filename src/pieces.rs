@@ -128,7 +128,7 @@ mod tests {
     fn accessions_from_fasta_short() {
         assert_eq!(
             FastaAccessions::from_fasta(Path::new("./resources/test_short_descr.fasta")).accessions,
-            vec!["Q2HZH0", "P93158", "H0VS30", "P9WNK5", "G1KTG2", "Q8I5U1", "G7PNW8"]
+            vec!["Q2HZH0", "P93158", "H0VS30"]
         )
     }
 
@@ -136,7 +136,7 @@ mod tests {
     fn accessions_from_fasta_long() {
         assert_eq!(
             FastaAccessions::from_fasta(Path::new("./resources/test.fasta")).accessions,
-            vec!["Q2HZH0", "P93158", "H0VS30", "P9WNK5", "G1KTG2", "Q8I5U1", "G7PNW8"]
+            vec!["Q2HZH0", "P93158", "H0VS30"]
         )
     }
 
@@ -146,15 +146,15 @@ mod tests {
             crate::index::FastaIndex::from_json(Path::new("./resources/test.index")).unwrap();
         let entry = FastaEntry::from_index(
             Path::new("./resources/test.fasta"),
-            *index.id_to_offset.get("P9WNK5").unwrap(),
+            *index.id_to_offset.get("P93158").unwrap(),
         )
         .unwrap();
         let expected = FastaEntry {
-            description: "sp|P9WNK5|ESXB_MYCTU ESAT-6-like protein EsxB OS=Mycobacterium \
-                tuberculosis (strain ATCC 25618 / H37Rv) OX=83332 GN=esxB PE=1 SV=1"
+            description: "tr|P93158|P93158_GOSHI Annexin (Fragment) OS=Gossypium \
+            hirsutum OX=3635 GN=AnnGh2 PE=2 SV=1"
                 .to_string(),
-            sequence: "MAEMKTDAATLAQEAGNFERISGDLKTQIDQVESTAGSLQGQWRGAAGTAAQAAVVRFQEAANKQK\
-            QELDEISTNIRQAGVQYSRADEEQQQALSSQMGF"
+            sequence: "TLKVPVHVPSPSEDAEWQLRKAFEGWGTNEQLIIDILAHRNAAQRNSIRKVYGEAYGEDL\
+            LKCLEKELTSDFERAVLLFTLDPAERDAHLANEATKKFTSSNWILMEIACSRSSHELLNV"
                 .to_string(),
         };
         assert_eq!(entry, expected);
@@ -164,13 +164,9 @@ mod tests {
     fn lengths_from_fasta() {
         let lengths = FastaLengths::from_fasta(Path::new("./resources/test.fasta"));
         let mut exp_map = HashMap::new();
-        exp_map.insert("Q8I5U1".to_string(), 441);
-        exp_map.insert("G1KTG2".to_string(), 435);
-        exp_map.insert("H0VS30".to_string(), 506);
-        exp_map.insert("Q2HZH0".to_string(), 270);
-        exp_map.insert("P93158".to_string(), 315);
-        exp_map.insert("P9WNK5".to_string(), 100);
-        exp_map.insert("G7PNW8".to_string(), 204);
+        exp_map.insert("H0VS30".to_string(), 180);
+        exp_map.insert("Q2HZH0".to_string(), 120);
+        exp_map.insert("P93158".to_string(), 120);
         assert_eq!(
             lengths,
             FastaLengths {
