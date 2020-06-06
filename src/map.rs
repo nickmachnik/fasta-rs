@@ -7,18 +7,12 @@ use std::io::{BufRead, BufReader, BufWriter, Seek, SeekFrom, Write};
 use std::path::Path;
 
 /// A HashMap representation of a Fasta file.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct FastaMap {
     pub id_to_seq: HashMap<String, String>,
 }
 
 impl FastaMap {
-    pub fn default() -> Self {
-        FastaMap {
-            id_to_seq: HashMap::new(),
-        }
-    }
-
     pub fn from_fasta(path: &Path) -> Self {
         let reader = FastaReader::new(path);
         let mut entries: HashMap<String, String> = HashMap::new();
@@ -79,5 +73,41 @@ impl FastaMap {
                 panic!("couldn't write to {:?}: {:?}", path, why)
             };
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn fasta_map_from_fasta() {
+        let mut exp_map = HashMap::new();
+        exp_map.insert(
+            ">Q2HZH0".to_string(),
+            "MATVPEPTSEMMSYYYSDNENDLFFEADGPRKMKCCFQDLNNSSLKDEGIQLHISHQLQN\
+            KSLRHFVSVVVALEKLKKISLPCSQPLQDDDLKNVFCCIFEEEPIVCEVYDDDAFVCDAP"
+                .to_string(),
+        );
+
+        exp_map.insert(
+            ">P93158".to_string(),
+            "TLKVPVHVPSPSEDAEWQLRKAFEGWGTNEQLIIDILAHRNAAQRNSIRKVYGEAYGEDL\
+            LKCLEKELTSDFERAVLLFTLDPAERDAHLANEATKKFTSSNWILMEIACSRSSHELLNV"
+                .to_string(),
+        );
+
+        exp_map.insert(
+            ">H0VS30".to_string(),
+            "MEAAAAAPRHQLLLLMLVAAAATLLPGAKALQCFCQLCAKDNYTCVTDGLCFVSITETTD\
+            RIIHNTMCIAEIDLIPRDRPFVCAPSSKTGAVTTTHCCNQDHCNKIELPTTEKQSSGLGP\
+            VELAAVIAGPVCFVCISLMLMVYICHNRTVIHHRVPNEEDPSLDRPFISEGTTLKDLIYD"
+                .to_string(),
+        );
+
+        assert_eq!(
+            FastaMap { id_to_seq: exp_map },
+            FastaMap::from_fasta(Path::new("./resources/test_short_descr.fasta"))
+        );
     }
 }
