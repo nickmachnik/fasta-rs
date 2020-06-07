@@ -3,11 +3,16 @@ name = "fasta"
 version = "0.1.0"
 authors = ["Nick Machnik <nick.machnik@gmail.com>"]
 edition = "2018"
+license = "MIT OR Apache-2.0"
+description = "Tools for FASTA reading, writing and indexing."
+readme = "README.md"
+homepage = "https://github.com/nickmachnik/fasta-rs"
+repository = "https://github.com/nickmachnik/fasta-rs"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 flate2 = "1.0"
-hashbrown = { version = "0.7", features = ["serde", "rayon"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
