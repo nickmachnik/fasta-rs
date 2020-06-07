@@ -8,6 +8,10 @@ description = "Tools for FASTA reading, writing and indexing."
 readme = "README.md"
 homepage = "https://github.com/nickmachnik/fasta-rs"
 repository = "https://github.com/nickmachnik/fasta-rs"
+exclude = [
+    ".gitignore",
+    "*sublime*",
+    "resources/test.accessions"]
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
