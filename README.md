@@ -1,3 +1,5 @@
+![Rust](https://github.com/nickmachnik/fasta-rs/workflows/Rust/badge.svg?branch=master)
+
 # rust-fs
 
 `rust-fs` provides tools for reading, indexing and manipulating files in FASTA format. It is the backend for the [fastatools](https://github.com/nickmachnik/fastatools) command line application.
