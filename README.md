@@ -4,7 +4,7 @@
 
 `rust-fs` provides tools for reading, indexing and manipulating files in FASTA format. It is the backend for the [fastatools](https://github.com/nickmachnik/fastatools) command line application.
 
-## Geting started
+## Getting started
 
 Will be updated shortly.
 
