@@ -1,5 +1,5 @@
 ![Rust](https://github.com/nickmachnik/fasta-rs/workflows/Rust/badge.svg?branch=master)
-![crates.io](https://img.shields.io/crates/v/fasta)
+[![crates.io](https://img.shields.io/crates/v/fasta)](https://crates.io/crates/fasta)
 
 # fasta-rs
 
