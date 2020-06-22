@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- include ">" prefix in description string in FastaEntry.
+
 ## [0.1.1]
 
 ### Fixed

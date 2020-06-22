@@ -125,7 +125,7 @@ mod tests {
         .unwrap();
 
         let exp_entry = FastaEntry {
-            description: "tr|P93158|P93158_GOSHI Annexin (Fragment) OS=Gossypium hirsutum OX=3635 GN=AnnGh2 PE=2 SV=1".to_string(),
+            description: ">tr|P93158|P93158_GOSHI Annexin (Fragment) OS=Gossypium hirsutum OX=3635 GN=AnnGh2 PE=2 SV=1".to_string(),
             sequence: "TLKVPVHVPSPSEDAEWQLRKAFEGWGTNEQLIIDILAHRNAAQRNSIRKVYGEAYGEDL\
             LKCLEKELTSDFERAVLLFTLDPAERDAHLANEATKKFTSSNWILMEIACSRSSHELLNV".to_string()
         };

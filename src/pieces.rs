@@ -118,7 +118,7 @@ impl FastaLengths {
 /// )
 /// .unwrap();
 /// let expected = FastaEntry {
-///     description: "tr|P93158|P93158_GOSHI Annexin (Fragment) OS=Gossypium \
+///     description: ">tr|P93158|P93158_GOSHI Annexin (Fragment) OS=Gossypium \
 ///     hirsutum OX=3635 GN=AnnGh2 PE=2 SV=1"
 ///         .to_string(),
 ///     sequence: "TLKVPVHVPSPSEDAEWQLRKAFEGWGTNEQLIIDILAHRNAAQRNSIRKVYGEAYGEDL\
@@ -141,7 +141,7 @@ impl FastaEntry {
         let mut lines = handle.lines();
         let line = lines.next().unwrap().unwrap();
         let description = if line.starts_with('>') {
-            line[1..].to_string()
+            line
         } else {
             return Err(Box::new(errors::ParseError::new(
                 errors::ErrorKind::IndexNotAtDescription,
@@ -198,7 +198,7 @@ mod tests {
         )
         .unwrap();
         let expected = FastaEntry {
-            description: "tr|P93158|P93158_GOSHI Annexin (Fragment) OS=Gossypium \
+            description: ">tr|P93158|P93158_GOSHI Annexin (Fragment) OS=Gossypium \
             hirsutum OX=3635 GN=AnnGh2 PE=2 SV=1"
                 .to_string(),
             sequence: "TLKVPVHVPSPSEDAEWQLRKAFEGWGTNEQLIIDILAHRNAAQRNSIRKVYGEAYGEDL\
