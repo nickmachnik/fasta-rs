@@ -100,6 +100,17 @@ impl FastaLengths {
         serde_json::to_writer(&mut file, &self.sequence_lengths)?;
         Ok(())
     }
+
+    /// Writes lengths and their counts to a .json file.
+    pub fn distribution_to_json(&self, outpath: &Path) -> Result<(), io::Error> {
+        let mut len_counts = HashMap::new();
+        for len in self.sequence_lengths.values() {
+            *len_counts.entry(len).or_insert(0) += 1;
+        }
+        let mut file = BufWriter::new(File::create(&outpath)?);
+        serde_json::to_writer(&mut file, &len_counts)?;
+        Ok(())
+    }
 }
 
 /// A single FASTA entry with description and header.
