@@ -111,6 +111,10 @@ impl FastaLengths {
         serde_json::to_writer(&mut file, &len_counts)?;
         Ok(())
     }
+
+    pub fn max(&self) -> Option<&usize> {
+        self.sequence_lengths.values().max()
+    }
 }
 
 /// A single FASTA entry with description and header.
