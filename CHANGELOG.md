@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.1.3]
+
+### Added
+
+- FastaLength: export distribution of lengths with distribution_to_json()
+
 ## [0.1.2]
 
 ### Changed
