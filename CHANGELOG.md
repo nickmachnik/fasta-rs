@@ -8,6 +8,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - FastaLength: export distribution of lengths with distribution_to_json()
+- FastaLength: get max len found with max()
 
 ## [0.1.2]
 
